@@ -14,9 +14,15 @@ API_URL = f"https://data.moenv.gov.tw/api/v2/aqx_p_214?api_key={api_key}&limit=1
 
 def fetch_data():
     try:
-        response = requests.get(API_URL)
+        # 加入 verify=False 略過 SSL 檢查，並加入 timeout 避免程式卡死
+        response = requests.get(API_URL, verify=False, timeout=10)
+
+        # 為了消除「不安全連線」的警告文字，可以加入這行
+        requests.packages.urllib3.disable_warnings()
+
         data = response.json()
         df = pd.DataFrame(data['records'])
+
         # 轉換數值型態
         df['concentration'] = pd.to_numeric(df['concentration'], errors='coerce')
         return df
