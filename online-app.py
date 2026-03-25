@@ -6,14 +6,8 @@ import requests
 st.set_page_config(page_title="苗栗站空品即時監測", layout="wide")
 st.title("🍀 苗栗縣-苗栗站 空氣品質即時小時值")
 
-# 2. 從 Streamlit Secrets 讀取金鑰，若無則使用預設值
-# 建議部署時在 Streamlit 點擊 Settings > Secrets 設定 MOENV_API_KEY
-try:
-    api_key = st.secrets["MOENV_API_KEY"]
-except:
-    api_key = "c2987138-cb80-4361-989a-e4c5066237b2"
-
-# 最終確認的 API 網址
+# 直接先放金鑰測試，排除 Secrets 設定問題
+api_key = "c2987138-cb80-4361-989a-e4c5066237b2"
 API_URL = f"https://data.moenv.gov.tw/api/v2/aqx_p_488?language=zh&offset=0&limit=1000&api_key={api_key}"
 
 def fetch_data():
@@ -29,7 +23,7 @@ def fetch_data():
                 all_df = pd.DataFrame(data['records'])
                 
                 # 關鍵步驟：篩選出「苗栗站」的資料
-                df = all_df[all_df['sitename'] == '苗栗'].copy()
+                df = all_df[all_df['sitename'].str.contains'苗栗'].copy()
                 
                 # 將濃度欄位轉為數字，無法轉換的變為 NaN
                 df['concentration'] = pd.to_numeric(df['concentration'], errors='coerce')
