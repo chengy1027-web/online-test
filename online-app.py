@@ -79,7 +79,7 @@ if not df_all.empty:
 
         # 7. 歷史趨勢圖
         st.write("---")
-        st.subheader(f"📈 {selected_site}站 24小時趨勢")
+        st.subheader(f"📈 {selected_site}站 12小時趨勢")
         display_options = {
             'aqi': 'AQI 指數',
             'pm2.5': '細懸浮微粒 (PM2.5)',
