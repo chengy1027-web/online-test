@@ -6,20 +6,21 @@ import requests
 st.set_page_config(page_title="苗栗站空品即時監測", layout="wide")
 st.title("🍀 苗栗縣-苗栗站 空氣品質即時小時值")
 
-# 環境部 API 網址 (苗栗站專屬資料集)
-# 修改原本的 API_URL
-api_key = st.secrets["MOENV_API_KEY"]
-API_URL = "https://data.moenv.gov.tw/api/v2/aqx_p_488?language=zh&offset=0&limit=1000&api_key=c2987138-cb80-4361-989a-e4c5066237b2"
+# 專家修正：使用 f-string 將 secrets 中的金鑰帶入網址
+try:
+    api_key = st.secrets["MOENV_API_KEY"]
+except KeyError:
+    # 如果本地測試沒設定 secrets，先放個備案或提示
+    st.error("請在 Streamlit Secrets 中設定 MOENV_API_KEY")
+    st.stop()
 
+# 使用 aqx_p_488 資料集 (苗栗縣所有測站小時值)
+API_URL = f"https://data.moenv.gov.tw/api/v2/aqx_p_488?language=zh&offset=0&limit=1000&api_key={api_key}"
 
 def fetch_data():
     try:
-        # 定義標頭 (Headers)
-        headers = {
-            "accept": "*/*"
-        }
-
-        # 關閉 SSL 警告並發送請求
+        headers = {"accept": "*/*"}
+        # 解決本地端的 SSL 驗證問題
         requests.packages.urllib3.disable_warnings()
         response = requests.get(API_URL, headers=headers, verify=False, timeout=10)
 
@@ -27,16 +28,17 @@ def fetch_data():
             data = response.json()
             if 'records' in data:
                 df = pd.DataFrame(data['records'])
+                # 只篩選「苗栗」站，避免資料太雜
+                df_miaoli = df[df['sitename'] == '苗栗'].copy()
                 # 數值轉換
-                df['concentration'] = pd.to_numeric(df['concentration'], errors='coerce')
-                return df
+                df_miaoli['concentration'] = pd.to_numeric(df_miaoli['concentration'], errors='coerce')
+                return df_miaoli
         else:
             st.error(f"API 連線失敗，錯誤碼：{response.status_code}")
             return None
     except Exception as e:
         st.error(f"執行出錯: {e}")
         return None
-
 
 df = fetch_data()
 
