@@ -23,4 +23,4 @@ jobs:
     - name: 執行語法檢查 (Linting)
       run: |
         # 使用 python 內建的編譯檢查，確保沒有 SyntaxError
-        python -m py_compile app.py
+        python -m py_compile *.py
