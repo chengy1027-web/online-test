@@ -67,7 +67,7 @@ if not df_all.empty:
 
         # 6. 即時指標顯示 (Metrics)
         st.write("### 📌 即時監測數據")
-        m_cols = st.columns(5)
+        m_cols = st.columns(6)
         m_cols[0].metric("PM2.5", f"{latest['pm2.5']} μg/m³")
         m_cols[1].metric("PM10", f"{latest['pm10']} μg/m³")
         m_cols[2].metric("O3 (臭氧)", f"{latest['o3']} ppb")
