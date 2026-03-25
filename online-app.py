@@ -2,37 +2,41 @@ import streamlit as st
 import pandas as pd
 import requests
 
-# 設定 APP 頁面
+# 1. 設定 APP 頁面標題與佈局
 st.set_page_config(page_title="苗栗站空品即時監測", layout="wide")
 st.title("🍀 苗栗縣-苗栗站 空氣品質即時小時值")
 
-# 專家修正：使用 f-string 將 secrets 中的金鑰帶入網址
+# 2. 從 Streamlit Secrets 讀取金鑰，若無則使用預設值
+# 建議部署時在 Streamlit 點擊 Settings > Secrets 設定 MOENV_API_KEY
 try:
     api_key = st.secrets["MOENV_API_KEY"]
-except KeyError:
-    # 如果本地測試沒設定 secrets，先放個備案或提示
-    st.error("請在 Streamlit Secrets 中設定 MOENV_API_KEY")
-    st.stop()
+except:
+    api_key = "c2987138-cb80-4361-989a-e4c5066237b2"
 
-# 使用 aqx_p_488 資料集 (苗栗縣所有測站小時值)
+# 最終確認的 API 網址
 API_URL = f"https://data.moenv.gov.tw/api/v2/aqx_p_488?language=zh&offset=0&limit=1000&api_key={api_key}"
 
 def fetch_data():
     try:
-        headers = {"accept": "*/*"}
-        # 解決本地端的 SSL 驗證問題
+        # 關閉 SSL 警告 (解決本地端的憑證錯誤問題)
         requests.packages.urllib3.disable_warnings()
-        response = requests.get(API_URL, headers=headers, verify=False, timeout=10)
-
+        # 發送請求，verify=False 確保在各種網路環境下都能執行
+        response = requests.get(API_URL, verify=False, timeout=15)
+        
         if response.status_code == 200:
             data = response.json()
             if 'records' in data:
-                df = pd.DataFrame(data['records'])
-                # 只篩選「苗栗」站，避免資料太雜
-                df_miaoli = df[df['sitename'] == '苗栗'].copy()
-                # 數值轉換
-                df_miaoli['concentration'] = pd.to_numeric(df_miaoli['concentration'], errors='coerce')
-                return df_miaoli
+                all_df = pd.DataFrame(data['records'])
+                
+                # 關鍵步驟：篩選出「苗栗站」的資料
+                df = all_df[all_df['sitename'] == '苗栗'].copy()
+                
+                # 將濃度欄位轉為數字，無法轉換的變為 NaN
+                df['concentration'] = pd.to_numeric(df['concentration'], errors='coerce')
+                # 確保時間欄位格式正確
+                df['monitordate'] = pd.to_datetime(df['monitordate'])
+                
+                return df
         else:
             st.error(f"API 連線失敗，錯誤碼：{response.status_code}")
             return None
@@ -40,35 +44,53 @@ def fetch_data():
         st.error(f"執行出錯: {e}")
         return None
 
+# 執行資料抓取
 df = fetch_data()
 
-if df is not None:
-    # 取得最新監測時間
-    last_update = df['monitordate'].iloc[0]
-    st.write(f"📊 最後更新時間：{last_update}")
+if df is not None and not df.empty:
+    # 取得最新一筆監測時間
+    last_update = df.sort_values('monitordate', ascending=False)['monitordate'].iloc[0]
+    st.info(f"📅 資料最後更新時間：{last_update}")
 
-    # 建立橫向指標 (Metrics)
-    cols = st.columns(4)
-    items = {
-        "PM2.5": "細懸浮微粒",
-        "PM10": "懸浮微粒",
-        "O3": "臭氧",
-        "SO2": "二氧化硫"
+    # 3. 建立上方即時指標 (Metrics)
+    st.subheader("📌 即時監測數值")
+    m_cols = st.columns(4)
+    target_items = {
+        "細懸浮微粒": "PM2.5",
+        "懸浮微粒": "PM10",
+        "臭氧": "O3",
+        "二氧化硫": "SO2"
     }
+    
+    # 取得最新一小時的各項數值
+    latest_data = df[df['monitordate'] == last_update]
+    
+    for col, (full_name, short_name) in zip(m_cols, target_items.items()):
+        item_row = latest_data[latest_data['itemname'] == full_name]
+        if not item_row.empty:
+            val = item_row['concentration'].iloc[0]
+            unit = item_row['itemunit'].iloc[0]
+            col.metric(label=f"{short_name} ({full_name})", value=f"{val} {unit}")
+        else:
+            col.metric(label=short_name, value="無資料")
 
-    for col, (label, name) in zip(cols, items.items()):
-        latest_val = df[df['itemname'] == name]['concentration'].iloc[0]
-        unit = df[df['itemname'] == name]['itemunit'].iloc[0]
-        col.metric(label, f"{latest_val} {unit}")
+    # 4. 資料視覺化：趨勢圖表
+    st.write("---")
+    st.subheader("📈 24小時濃度趨勢圖")
+    
+    # 讓使用者選擇想看的測項
+    available_items = df['itemname'].unique()
+    selected_item = st.selectbox("請選擇觀測項目：", options=available_items, index=0)
+    
+    # 準備圖表資料
+    chart_df = df[df['itemname'] == selected_item].sort_values('monitordate')
+    
+    # 使用 Streamlit 內建折線圖
+    st.line_chart(data=chart_df, x='monitordate', y='concentration')
 
-    # 資料視覺化：趨勢圖表
-    st.subheader("📈 近期濃度趨勢")
-    target_item = st.selectbox("選擇監測項目", options=df['itemname'].unique())
-    chart_data = df[df['itemname'] == target_item].sort_values('monitordate')
-    st.line_chart(data=chart_data, x='monitordate', y='concentration')
+    # 5. 顯示原始資料表 (折疊式)
+    with st.expander("🔍 查看苗栗站原始數據明細"):
+        st.dataframe(df.sort_values('monitordate', ascending=False))
 
-    # 顯示原始資料表
-    with st.expander("查看原始數據"):
-        st.write(df)
 else:
-    st.warning("目前無法取得資料，請檢查 API Key 或網路連線。")
+    st.warning("⚠️ 暫時抓不到苗栗站的資料，請確認 API 金鑰是否有效，或稍後再試。")
