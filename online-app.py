@@ -23,7 +23,7 @@ def fetch_data():
                 all_df = pd.DataFrame(data['records'])
                 
                 # 關鍵步驟：篩選出「苗栗站」的資料
-                df = all_df[all_df['sitename'].str.contains'苗栗'].copy()
+                df = all_df[all_df['sitename'].str.contains('苗栗')].copy()
                 
                 # 將濃度欄位轉為數字，無法轉換的變為 NaN
                 df['concentration'] = pd.to_numeric(df['concentration'], errors='coerce')
