@@ -34,7 +34,7 @@ if not df_all.empty:
     
     if not df_target.empty:
         # 資料型態轉換
-        df_target['datacreationdate'] = pd.to_datetime(df_target['datacreationdate'])
+        df_target['poblishtime'] = pd.to_datetime(df_target['poblishtime'])
         num_cols = ['aqi', 'pm2.5', 'pm10', 'o3', 'so2','no2', 'windspeed']
         for col in num_cols:
             if col in df_target.columns:
@@ -46,8 +46,8 @@ if not df_all.empty:
         site_data = df_target[df_target['sitename'] == selected_site].copy()
         
         # 取得最新一筆資料
-        last_update = site_data['datacreationdate'].max()
-        latest = site_data[site_data['datacreationdate'] == last_update].iloc[0]
+        last_update = site_data['poblishtime'].max()
+        latest = site_data[site_data['poblishtime'] == last_update].iloc[0]
 
         st.info(f"📍 當前站點：{selected_site} | 🕒 更新時間：{last_update}")
 
@@ -87,12 +87,12 @@ if not df_all.empty:
         }
         selected_item = st.selectbox("請選擇觀測項目：", options=list(display_options.keys()), format_func=lambda x: display_options[x])
         
-        chart_data = site_data.sort_values('datacreationdate')
-        st.line_chart(data=chart_data, x='datacreationdate', y=selected_item)
+        chart_data = site_data.sort_values('poblishtime')
+        st.line_chart(data=chart_data, x='poblishtime', y=selected_item)
 
         # 8. 數據表
         with st.expander("🔍 查看原始數據明細"):
-            st.dataframe(site_data.sort_values('datacreationdate', ascending=False))
+            st.dataframe(site_data.sort_values('poblishtime', ascending=False))
     else:
         st.warning("⚠️ 抓到資料了，但裡面沒有苗栗、頭份或三義站。")
 else:
