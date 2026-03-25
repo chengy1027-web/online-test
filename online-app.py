@@ -8,12 +8,12 @@ st.title("🍀 苗栗縣重點測站 - 空氣品質即時監測")
 
 # 2. API 設定
 api_key = "c2987138-cb80-4361-989a-e4c5066237b2"
-API_URL = f"https://data.moenv.gov.tw/api/v2/aqx_p_488?language=zh&offset=0&limit=1000&api_key={api_key}"
+API_URL = f"https://data.moenv.gov.tw/api/v2/aqx_p_488?language=zh&offset=0&limit=50000&api_key={api_key}"
 
 def fetch_data():
     try:
         requests.packages.urllib3.disable_warnings()
-        response = requests.get(API_URL, verify=False, timeout=20)
+        response = requests.get(API_URL, verify=False, timeout=30)
         if response.status_code == 200:
             data = response.json()
             records = data.get('records', []) if isinstance(data, dict) else data
