@@ -35,7 +35,7 @@ if not df_all.empty:
     if not df_target.empty:
         # 資料型態轉換
         df_target['datacreationdate'] = pd.to_datetime(df_target['datacreationdate'])
-        num_cols = ['aqi', 'pm2.5', 'pm10', 'o3', 'so2', 'windspeed']
+        num_cols = ['aqi', 'pm2.5', 'pm10', 'o3', 'so2','no2', 'windspeed']
         for col in num_cols:
             if col in df_target.columns:
                 df_target[col] = pd.to_numeric(df_target[col], errors='coerce')
@@ -72,15 +72,17 @@ if not df_all.empty:
         m_cols[1].metric("PM10", f"{latest['pm10']} μg/m³")
         m_cols[2].metric("O3 (臭氧)", f"{latest['o3']} ppb")
         m_cols[3].metric("SO2 (二氧化硫)", f"{latest['so2']} ppb")
-        m_cols[4].metric("🌬️ 風速", f"{latest['windspeed']} m/s")
+        m_cols[4].metric("NO2 (二氧化氮)", f"{latest['no2']} ppb")
+        m_cols[5].metric("🌬️ 風速", f"{latest['windspeed']} m/s")
 
         # 7. 歷史趨勢圖
         st.write("---")
         st.subheader(f"📈 {selected_site}站 24小時趨勢")
         display_options = {
             'aqi': 'AQI 指數',
-            'pm2.5': '細懸浮微粒 (PM2.5)',
+            'pm2.5': '細懸浮微粒 (PM2.5)',            
             'pm10': '懸浮微粒 (PM10)',
+            'o3': '臭氧 (O3)',
             'windspeed': '風速 (Wind Speed)'
         }
         selected_item = st.selectbox("請選擇觀測項目：", options=list(display_options.keys()), format_func=lambda x: display_options[x])
