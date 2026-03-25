@@ -1,0 +1,26 @@
+name: Python Syntax Check
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 檢出程式碼
+      uses: actions/checkout@v3
+
+    - name: 設定 Python 環境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: 安裝必要套件 (Packages)
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: 執行語法檢查 (Linting)
+      run: |
+        # 使用 python 內建的編譯檢查，確保沒有 SyntaxError
+        python -m py_compile app.py
