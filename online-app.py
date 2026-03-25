@@ -9,7 +9,7 @@ st.title("🍀 苗栗縣-苗栗站 空氣品質即時小時值")
 # 環境部 API 網址 (苗栗站專屬資料集)
 # 修改原本的 API_URL
 api_key = st.secrets["MOENV_API_KEY"]
-API_URL = f"https://data.moenv.gov.tw/api/v2/aqx_p_214?api_key={api_key}&limit=100&sort=monitordate%20desc&format=JSON"
+API_URL = f"https://data.moenv.gov.tw/api/v2/aqx_p_488?language=zh&offset=0&limit=1000&api_key=c2987138-cb80-4361-989a-e4c5066237b2" -H "accept: */*""
 
 
 def fetch_data():
